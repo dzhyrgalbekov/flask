@@ -14,6 +14,8 @@ class Item(db.Model):
     title = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     isActive = db.Column(db.Boolean, default=True)
+    text = db.Column(db.Text, nullable=False)
+
     def __repr__(self):
         return self.title
 
@@ -31,6 +33,39 @@ def about():
 def post():
     articles = Item.query.order_by(Item.id).all()
     return render_template('post.html', articles=articles)
+
+@app.route('/post/<int:id>')
+def post_detail(id):
+    article = Item.query.get(id)
+    return render_template('post_detail.html', article=article)
+
+@app.route('/post/<int:id>/del')
+def post_delete(id):
+    article = Item.query.get_or_404(id)
+
+    try:
+        db.session.delete(article)
+        db.session.commit()
+        return redirect('/post')
+    except:
+        return "Error"
+
+@app.route('/post/<int:id>/update', methods=['POST', 'GET'])
+def post_update(id):
+    article = Item.query.get(id)
+    if request.method == "POST":
+        article.title = request.form['title']
+        article.price = request.form['price']
+        article.text = request.form['text']
+
+        try:
+            db.session.commit()
+            return redirect('/')
+        except:
+            return "ERORR"
+    else:
+        return render_template('post_update.html', article=article)
+
 
 @app.route('/buy/<int:id>')
 def item_buy(id):
@@ -51,8 +86,9 @@ def create():
     if request.method == "POST":
         title = request.form['title']
         price = request.form['price']
+        text = request.form['text']
 
-        item = Item(title=title, price=price)
+        item = Item(title=title, price=price, text=text)
 
         try:
             db.session.add(item)
